@@ -1,0 +1,143 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Calor - Vendas por Estado</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Dados dos estados
+        const data = {
+            "São Paulo": 31309,
+            "Minas Gerais": 14822,
+            "Rio de Janeiro": 7679,
+            "Paraná": 5428,
+            "Rio Grande do Sul": 4855,
+            "Bahia": 4810,
+            "Distrito Federal": 3744,
+            "Ceará": 3582,
+            "Goiás": 3339,
+            "Santa Catarina": 3139,
+            "Espírito Santo": 2445,
+            "Pernambuco": 2246,
+            "Mato Grosso": 1996,
+            "Mato Grosso do Sul": 1390,
+            "Pará": 1191,
+            "Rondônia": 1038,
+            "Maranhão": 871,
+            "Amazonas": 860,
+            "Paraíba": 827,
+            "Rio Grande do Norte": 716,
+            "Alagoas": 678,
+            "Sergipe": 677,
+            "Tocantins": 577,
+            "Piauí": 407,
+            "Acre": 329,
+            "Roraima": 74,
+            "Amapá": 72
+        };
+
+        // Configuração do mapa
+        const map = L.map('map').setView([-15.7942, -47.8825], 4); // Centro do Brasil
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Função para determinar a cor com base no número de unidades
+        function getColor(d) {
+            return d > 30000 ? '#800026' :
+                   d > 15000  ? '#BD0026' :
+                   d > 7000   ? '#E31A1C' :
+                   d > 5000   ? '#FC4E2A' :
+                   d > 4000   ? '#FD8D3C' :
+                   d > 3000   ? '#FEB24C' :
+                   d > 2000   ? '#FED976' :
+                              '#FFEDA0';
+        }
+
+        // Estilos para os estados
+        function style(feature) {
+            return {
+                fillColor: getColor(data[feature.properties.name] || 0),
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+            };
+        }
+
+        // Carregar o GeoJSON do Brasil
+        fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
+            .then(response => response.json())
+            .then(geojson => {
+                L.geoJSON(geojson, {
+                    style: style,
+                    onEachFeature: function (feature, layer) {
+                        layer.on({
+                            mouseover: function (e) {
+                                layer.setStyle({ weight: 5, color: '#666', dashArray: '' });
+                                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                    layer.bringToFront();
+                                }
+                                const value = data[feature.properties.name] || 0;
+                                layer.bindPopup(`${feature.properties.name}: ${value} unidades`).openPopup();
+                            },
+                            mouseout: function (e) {
+                                layer.setStyle({ weight: 2, color: 'white', dashArray: '3' });
+                            }
+                        });
+                    }
+                }).addTo(map);
+            });
+
+    </script>
+</body>
+</html>
