@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Mapa de Vendas por Estado</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {
+        'packages': ['geochart'],
+        'mapsApiKey': 'YOUR_GOOGLE_MAPS_API_KEY' // opcional, funciona sem
+      });
+      google.charts.setOnLoadCallback(drawRegionsMap);
+
+      function drawRegionsMap() {
+        var data = google.visualization.arrayToDataTable([
+          ['Estado', 'Vendas'],
+          ['São Paulo', 31856],
+          ['Minas Gerais', 15292],
+          ['Rio de Janeiro', 7894],
+          ['Paraná', 5520],
+          ['Rio Grande do Sul', 4958],
+          ['Bahia', 4876],
+          ['Distrito Federal', 3776],
+          ['Ceará', 3623],
+          ['Goiás', 3422],
+          ['Santa Catarina', 3211],
+          ['Espírito Santo', 2505],
+          ['Pernambuco', 2294],
+          ['Mato Grosso', 2105],
+          ['Mato Grosso do Sul', 1423],
+          ['Pará', 1278],
+          ['Rondônia', 1080],
+          ['Maranhão', 900],
+          ['Amazonas', 891],
+          ['Paraíba', 858],
+          ['Rio Grande do Norte', 732],
+          ['Sergipe', 699],
+          ['Alagoas', 695],
+          ['Tocantins', 598],
+          ['Piauí', 424],
+          ['Acre', 333],
+          ['Amapá', 80],
+          ['Roraima', 76]
+        ]);
+
+        var options = {
+          region: 'BR',
+          resolution: 'provinces',
+          colorAxis: {
+            colors: ['#d73027', '#fee08b', '#1a9850'] // vermelho → amarelo → verde
+          },
+          backgroundColor: '#f8f8f8',
+          datalessRegionColor: '#eeeeee',
+          defaultColor: '#f5f5f5'
+        };
+
+        var chart = new google.visualization.GeoChart(document.getElementById('mapa'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+  <body>
+    <h2 style="font-family:sans-serif;">Mapa de Vendas por Estado (Brasil)</h2>
+    <div id="mapa" style="width: 100%; height: 600px;"></div>
+  </body>
+</html>
